@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipment Notification</title>
+    <link rel="stylesheet" href="https://your-website.com/styles.css">
+    <!-- Include external CSS for styling -->
+    <style>
+        /* Internal styles can be added here if needed */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        a {
+            color: #007bff; /* Link color */
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shipment Notification</h1>
+        <p>Hello {USERNAME},</p>
+        <p>Your shipment is on its way! Track your shipment <a href="https://your-website.com/track/{TRACKING_ID}">here</a>.</p>
+        <img src="cid:shipment_image" alt="Shipment Image">
+    </div>
+</body>
+</html>
