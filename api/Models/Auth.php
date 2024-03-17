@@ -4,14 +4,7 @@
 
 class Auth
 {
-    /**
-     * The function initializes a private variable called `db` with the value of the `$conn` parameter.
-     *
-     * @param PDO $conn The parameter `$conn` is likely a PDO database connection object. It is used
-     * to establish a connection to a database and interact with it. The `__construct` method is a
-     * constructor that is called when an object of this class is created. It takes the `$conn`
-     * parameter and assigns it.
-     */
+   
     private PDO $db;
     private $secret_key = "buckaikeys";
 
@@ -20,15 +13,7 @@ class Auth
         $this->db = $conn;
     }
 
-    /**
-     * The function "escapeString" in PHP takes a string as input and returns the string with special
-     * characters escaped.
-     *
-     * @param string $biotext The parameter `$biotext` is a string that represents the text that needs to be
-     * escaped.
-     *
-     * @return string The escaped string.
-     */
+   
     public function escapeString(string $biotext): string
     {
         $biotext = $this->db->quote($biotext);
@@ -59,15 +44,7 @@ class Auth
         return trim($value ?? '');
     }
 
-    /**
-     * The function checks if a given string only contains valid letters (a-z, A-Z, hyphen, apostrophe,
-     * and space).
-     *
-     * @param string $name The parameter `$name` is a string that represents a person's name.
-     *
-     * @return bool A boolean value. If the name contains only valid letters (a-z, A-Z, hyphen, apostrophe,
-     * and space), it will return true. Otherwise, it will return false.
-     */
+   
     public function validLetters(string $name): bool
     {
         return (bool)preg_match("/^[a-zA-Z-' ]*$/", $name);
@@ -84,26 +61,14 @@ class Auth
         exit();
     }
 
-    /**
-     * The function "logout" destroys the current session and unsets the session ID.
-     *
-     * @param string $sessionid The session ID is a unique identifier that is assigned to each user's session
-     * when they log in. It is used to track and manage the user's session data.
-     */
+
     public function logout(mixed $sessionid): void
     {
         session_destroy();
         unset($_SESSION[$sessionid]);
     }
 
-    /**
-     * The function "validate" in PHP trims, removes slashes, and converts special characters to HTML
-     * entities in the input string.
-     *
-     * @param string $input The input parameter is a string that needs to be validated.
-     *
-     * @return string The validated and sanitized input.
-     */
+   
     public function validate(string $input): string
     {
         $input = trim($input);
@@ -125,48 +90,23 @@ class Auth
         return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 
-    /**
-     * The function checks if the password and confirm password inputs match and returns true if they
-     * do, and false if they don't.
-     *
-     * @param string $password The password that the user entered.
-     * @param string $confirmpass The parameter `$confirmpass` is the password entered by the user to confirm
-     * their password.
-     *
-     * @return bool A boolean value. If the password and confirm password match, it will return true. If they
-     * do not match, it will return false.
-     */
+   
     public function matchpassword(string $password, string $confirmpass): bool
     {
-        return $password === $confirmpass;
+        if($password === $confirmpass){
+            return true;
+        }else{
+            return false;
+        }
     }
 
-    /**
-     * The function checks if a password is at least 6 characters long and returns true if it is, and
-     * false otherwise.
-     *
-     * @param string $password The parameter `$password` is a string that represents the password that needs to
-     * be checked for its length.
-     *
-     * @return bool A boolean value. If the length of the password is less than 6, it will return false.
-     * Otherwise, it will return true.
-     */
+   
     public function passwordlength(string $password): bool
     {
         return strlen($password) >= 6;
     }
 
-    /**
-     * The authPassword function checks if the entered password matches the hashed password stored in
-     * the database for a given user.
-     *
-     * @param string $sessionid The `$sessionid` parameter is the unique identifier for the user session. It is
-     * used to retrieve the user's information from the database.
-     * @param string $password The `$password` parameter is the password entered by the user for authentication.
-     *
-     * @return bool A boolean value. It returns true if the entered password matches the hashed password
-     * stored in the database for the given user ID, and false otherwise.
-     */
+   
     public function authPassword(int $sessionid, string $password): bool
     {
         try {

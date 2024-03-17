@@ -1,8 +1,11 @@
 <?php
 
 // namespace App\Services;
+require_once('./vendor/autoload.php');
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
 // require_once './db/Database.php';
 
 class AuthHandler{
@@ -21,12 +24,12 @@ class AuthHandler{
 
    
 // Function to generate JWT token
-public function generateJwtToken($user_id, $secret_key) {
+public function generateJwtToken($user_id) {
     $payload = array(
         "user_id" => $user_id,
         "exp" => time() + 3600, // Token expiration time (adjust as needed)
     );
-    return JWT::encode($payload, $secret_key);
+    return JWT::encode($payload,$this->secretKey,'HS256');
 }
 
 
@@ -34,7 +37,7 @@ public function generateJwtToken($user_id, $secret_key) {
 // Function to verify and get user details from JWT token
 function verifyAndGetUserDetails($token, $secret_key) {
     try {
-        $decoded = JWT::decode($token, $secret_key, array('HS256'));
+        $decoded = JWT::decode($token, new Key("donem", 'HS512'));
         $user_id = $decoded->user_id;
 
         // Retrieve user details from the database based on user_id
@@ -128,8 +131,13 @@ function getUserDetailsFromDatabase($user_id) {
      */
     public function matchpassword(string $password, string $confirmpass): bool
     {
-        return $password === $confirmpass;
+        if($password === $confirmpass){
+            return true;
+        }else{
+            return false;
+        }
     }
+
 
     /**
      * The function checks if a password is at least 6 characters long and returns true if it is, and

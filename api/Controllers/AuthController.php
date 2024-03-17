@@ -5,19 +5,8 @@ require './Services/AuthHandler.php';
 require './Services/ResponseHandler.php';
 require './Services/EmailSender.php';
 require "./Models/User.php";
-
-// use App\Services\AuthHandler;
-require_once './db/Database.php';
-
-// Create an instance of the Database class
-
-
-// Get the database connection
-
-
-// Instantiate AuthHandler with your secret key
-// $authHandler = new AuthHandler($_ENV['JWT_SECRET']); // Replace with your actual secret key
-$auth = new AuthHandler('shit');
+require "./Models/Login.php";
+require "./Models/Register.php";
 
 
 class authController
@@ -28,17 +17,21 @@ class authController
     private $auth;
     private $response;
     private $emailService;
+    private $registerModel;
+    private $loginModel;
 
     public function __construct()
     {
         $this->database = new Database();
         $this->conn = $this->database->getConnection();
-        $this->auth = new AuthHandler('your_secret_key');
+        $this->auth = new AuthHandler('donem');
         $this->userModel = new User($this->conn);
         $this->response = new Response();
         $this->emailService = new EmailSender();
-    }
+        $this->registerModel = new Register($this->conn);
+        $this->loginModel = new Login($this->conn);
 
+    }
 
 
     public function register()
@@ -123,12 +116,81 @@ class authController
 
             }
         }
+        return $this->response->sendError('error', 'Failed to add email');
+    }
 
 
+    public function createPassword($userid)
+    {
+
+        $requestBody = json_decode(file_get_contents("php://input"), true);
+        $requiredFields = ['password', 'confirmpassword'];
+
+        foreach ($requiredFields as $field) {
+            if (!isset($requestBody[$field])) {
+                return $this->response->sendError('error', ucfirst($field) . ' field is required');
+            }
+        }
+        $password = $this->auth->validate($requestBody['password']);
+        $confirmpassword = $this->auth->validate($requestBody['confirmpassword']);
+
+        if (empty($password) && empty($confirmpassword)) {
+            return $this->response->sendError('error', 'all fields must be filled');
+        } else {
+            if (!$this->auth->passwordlength($password)) {
+                return $this->response->sendError('error', 'password length must be greater than 6');
+            } else {
+                if (!$this->auth->matchpassword($password, $confirmpassword)) {
+                    return $this->response->sendError('error', 'password does not match');
+                }else{
+                    if($this->userModel->createPassword($password,$userid)){
+                        return $this->response->sendResponse('success', 'password created successfully');
+                    }else{
+                        return $this->response->sendError('error', 'password does not match');
+                    }
+
+                }
+            }
+        }
 
 
+        // return $this->response->sendError('error', 'Failed to add email');
+    }
 
 
+    public function login()
+    {
+
+        $requestBody = json_decode(file_get_contents("php://input"), true);
+        $requiredFields = ['email', 'password'];
+
+        foreach ($requiredFields as $field) {
+            if (!isset($requestBody[$field])) {
+                return $this->response->sendError('error', ucfirst($field) . ' field is required');
+            }
+        }
+
+        $email = $this->auth->validate($requestBody['email']);
+        $password = $this->auth->validate($requestBody['password']);
+
+        if (empty($email)) {
+            return $this->response->sendError('error', 'email address is required');
+        }
+        if (empty($password)) {
+            return $this->response->sendError('error', 'password is required');
+        }
+ $userid=1;
+
+        if (!$this->auth->filteremail($email)) {
+            return $this->response->sendError('error', 'Invalid Email Address');
+        } else {
+            if($this->loginModel->login($email, $password)){
+                $jwtToken=$this->auth->generateJwtToken($userid);
+            return json_encode(['token' => $jwtToken]);
+            }else{
+                return $this->response->sendError('error', 'wrong email or password');
+            }
+        }
         return $this->response->sendError('error', 'Failed to add email');
     }
 

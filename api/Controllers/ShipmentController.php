@@ -3,17 +3,19 @@ require "./Models/Shipment.php";
 require "./Services/PushNotificationService.php";
 
 use App\Services\PushNotificationService;
-// use Shipment;
-// use AuthHandler;
-// use App\Services\PushNotificationService;
+// use Shipment\Shipment;
 
 class ShipmentController {
     private $shipmentModel;
+    private $database;
+    private $conn;
     private $authHandler;
     private $pushNotificationService;
 
     public function __construct() {
-        $this->shipmentModel = new Shipment;
+        $this->database = new Database();
+        $this->conn = $this->database->getConnection();
+        $this->shipmentModel = new Shipment($this->conn);
         $this->authHandler =  new AuthHandler('your_secret_key'); 
         $this->pushNotificationService = new PushNotificationService();
     }
@@ -27,6 +29,10 @@ class ShipmentController {
         } else {
             return json_encode(['error' => 'Failed to create shipment']);
         }
+    }
+
+    public function addPackage(){
+        
     }
 
     public function getShipmentByTrackingId($trackingId) {

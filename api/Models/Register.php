@@ -4,8 +4,9 @@
 // $db = new Database();
 // $conn = $db->getConnection();
 
-class User{
+class Register{
     private $db;
+    
 
     public function __construct($db) {
         $this->db = $db;
@@ -205,3 +206,6 @@ class User{
 
     
 }
+
+
+?>
