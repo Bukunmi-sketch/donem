@@ -12,20 +12,18 @@ class Register{
         $this->db = $db;
     }
 
-    public function createUser($firstname,$lastname, $phone, $address) {
-        // Hash the password before storing in the database
-        // $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        // Insert user into the 'users' table
+    public function createUser($firstname,$lastname, $phone, $address,$email,$otp) {
         $role = 'user';
         try {
-            $sql="INSERT INTO users(firstname,lastname, phone, address) VALUES (:firstname, :lastname, :phone, :address)";
+            $sql="INSERT INTO users(firstname,lastname, phone, address,email,otp) VALUES (:firstname, :lastname, :phone, :address,:email,:otp)";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 ":firstname" => $firstname,
                 ":lastname" => $lastname,
                 ":phone" => $phone,
                 ":address" => $address,
+                ":email" => $email,
+                ":otp" => $otp
             ]);
 
             if ($stmt->execute()) {
@@ -35,6 +33,28 @@ class Register{
             }
         } catch (PDOException $e) {
             echo "Error: " . $e->getMessage();
+            return false;
+        }
+    }
+
+    public function verifyEmail(string $email, int $mailotp): bool
+    {
+        try {
+            $sql = "SELECT * FROM users WHERE email = :email";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
+
+            // if ($stmt->rowCount() > 0) {
+                $returnedRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($mailotp === $returnedRow['otp']){
+                    return true;
+                }
+            // }
+
+            return false;
+        } catch (PDOException $e) {
+            echo $e->getMessage();
             return false;
         }
     }
@@ -76,18 +96,18 @@ class Register{
         }
     }
 
-    public function createPassword($password,$userid){
+    public function createPassword($password,$email,$phone){
         try {
             // Hash the password
             $user_hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO users(userid, password) VALUES (:userid, :password)";
+            $sql="UPDATE users SET password = :password WHERE email = :email AND phone = :phone ";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
-                ":userid" => $userid,
-                ":password" => $user_hashed_password,
+                ":password"=>$user_hashed_password,
+                ":email" => $email,
+                ":phone" => $phone
             ]);
-
             return $result;
         } catch (PDOException $e) {
             echo $e->getMessage();
@@ -118,32 +138,6 @@ class Register{
         }
     }
 
-    
-
-
-
-
-    public function verifyEmail(int $userId, int $mailotp): bool
-    {
-        try {
-            $sql = "SELECT * FROM bucxai_users WHERE user_id = :userId";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':userId', $userId);
-            $stmt->execute();
-
-            // if ($stmt->rowCount() > 0) {
-                $returnedRow = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($mailotp === $returnedRow['mailotp']){
-                    return true;
-                }
-            // }
-
-            return false;
-        } catch (PDOException $e) {
-            echo $e->getMessage();
-            return false;
-        }
-    }
 
     public function sendOtp(string $email, string $mailotp): bool
     {

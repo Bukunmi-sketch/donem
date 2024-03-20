@@ -31,6 +31,10 @@ class ShipmentController {
         }
     }
 
+    public function getShipmentDetails(){
+        
+    }
+
     public function addPackage(){
         
     }

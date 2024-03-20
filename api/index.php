@@ -8,6 +8,7 @@ require_once 'vendor/autoload.php';
 // require_once 'Controllers/AuthController.php';
 require_once 'Controllers/AuthController.php';
 require_once 'Controllers/ShipmentController.php';
+require_once 'Controllers/userController.php';
 require_once 'Models/Payment.php';
 
 use Firebase\JWT\JWT;
@@ -19,7 +20,7 @@ class Router {
 
     private function handleProtectedEndpoints($endpoint) {
         // Define endpoints that require JWT authentication
-        $protectedEndpoints = ['/getUsersDetails', '/updateusers','/create-shipments','/login'];
+        $protectedEndpoints = ['get-user', 'updateusers','create-shipments','update-profile'];
 
         // Check if the requested endpoint is protected
         if (in_array($endpoint, $protectedEndpoints)) {
@@ -34,8 +35,9 @@ class Router {
                 // $decodedToken = $jwt->decode($token, 'your_secret_key', array('HS256'));
                 $token = str_replace('Bearer ', '', $authorizationHeader);
                 $decoded = JWT::decode($token,  new Key("donem", 'HS256'));
-                $user_id = $decoded->user_id;
-                // echo json_encode(['error' => $decoded]); 
+                return $decoded;
+           //    return $user_id = $decoded->user_id;
+               //  echo json_encode(['user' => $user_id]); 
         
             } catch (Exception $e) {
                 http_response_code(401);
@@ -51,16 +53,23 @@ class Router {
     public function route($method, $param, $endpoint) {
         $registercontroller = new authController();
         $shipmentcontroller = new ShipmentController();
+        $usercontroller = new userController();
 
-        $this->handleProtectedEndpoints($endpoint);
+         $token=$this->handleProtectedEndpoints($endpoint);
+
+        //  echo json_encode(['error' => $token]);
+
+
         
         switch ($method) {
             case 'POST':
-                return $this->handlePostRequest($registercontroller, $shipmentcontroller, $endpoint);
+                return $this->handlePostRequest($registercontroller, $token, $shipmentcontroller, $usercontroller, $param, $endpoint);
             case 'GET':
-                return $this->handleGetRequest($registercontroller,  $shipmentcontroller, $param, $endpoint);
+                return $this->handleGetRequest($registercontroller, $token, $shipmentcontroller, $usercontroller, $param, $endpoint);
             case 'PUT':
-                return $this->handlePutRequest($registercontroller,  $shipmentcontroller, $endpoint);
+                return $this->handlePutRequest($registercontroller, $token, $shipmentcontroller, $usercontroller, $param, $endpoint);
+            case 'DELETE':
+                return $this->handleDeleteRequest($registercontroller, $token, $shipmentcontroller, $usercontroller, $param, $endpoint);
             default:
                 http_response_code(405);
                 return json_encode(['error' => 'Method Not Allowed']);
@@ -69,15 +78,15 @@ class Router {
 
     private function handlePostRequest($authcontroller, $shipcontroller,  $endpoint) {
         switch ($endpoint) {
-            case '/register':
+            case 'register':
                 return $authcontroller->register();
-            case '/login':
+            case 'login':
                 return $authcontroller->login();
             case '/register-email':
                 return $authcontroller->registerEmail();
-            case '/verify-email':
-                return $authcontroller->verifyEmail();   
-            case '/register-password':
+            case 'verify-email':
+                return $authcontroller->confirmOtp();   
+            case 'create-password':
                 return $authcontroller->createPassword();  
             case '/create-shipment':
                 return $shipcontroller->createShipment();   
@@ -89,10 +98,10 @@ class Router {
         }
     }
 
-    private function handleGetRequest($authcontroller, $shipcontroller, $param, $endpoint) {
+    private function handleGetRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint) {
         switch ($endpoint) {
-            case '/getUsersDetails':
-                return $authcontroller->register;
+            case 'get-user':
+                return $usercontroller->fetchUserdetails($token->user_id);
                 break;
             case '/login':
                 return $authcontroller->login();
@@ -100,15 +109,9 @@ class Router {
                 return $authcontroller->getAllUsers();
                 break;
             case 'getusers-shipments':
-            return $response = $param ? json_encode(['error' => $param]) : json_encode(['error' => 'Missing parameter']);
+            return $param ?  $shipcontroller->getShipmentDetails($param) : json_encode(['error' => 'Missing parameter']);
+        //    return $response = $param ? json_encode(['error' => $param]) : json_encode(['error' => 'Missing parameter']);
             http_response_code($param ? 200 : 400);
-                // if ($param) {
-                //    return $response = json_encode(['error' => $param]);
-                //   return $authcontroller->getShipmentDetails($param);
-                //     } else {
-                //         http_response_code(400);
-                //        return $response = json_encode(['error' => 'Missing parameter']);
-                //     }
                 break;
             case '/getusers-details':   
             if ($param) {

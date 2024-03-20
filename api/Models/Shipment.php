@@ -177,6 +177,10 @@ class Shipment
         }
     }
 
+    public function getShipmentDetails(){
+        
+    }
+
 
 
 

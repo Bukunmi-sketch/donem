@@ -11,20 +11,21 @@ class User{
         $this->db = $db;
     }
 
-    public function createUser($firstname,$lastname, $phone, $address) {
+    public function createUser($firstname,$lastname, $phone, $address,$email) {
         // Hash the password before storing in the database
         // $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
         // Insert user into the 'users' table
         $role = 'user';
         try {
-            $sql="INSERT INTO users(firstname,lastname, phone, address) VALUES (:firstname, :lastname, :phone, :address)";
+            $sql="INSERT INTO users(firstname,lastname, phone, address,email) VALUES (:firstname, :lastname, :phone, :address, :email)";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 ":firstname" => $firstname,
                 ":lastname" => $lastname,
                 ":phone" => $phone,
                 ":address" => $address,
+                ":email" => $email
             ]);
 
             if ($stmt->execute()) {
@@ -68,7 +69,11 @@ class User{
             $stmt->bindParam(':email', $email);
             $stmt->execute();
 
-            return $stmt->rowCount() === 0;
+            if($stmt->rowCount() === 0){
+                return true;
+            }else{
+                return false;
+            }
         } catch (PDOException $e) {
             echo $e->getMessage();
             return false;
@@ -97,10 +102,11 @@ class User{
     public function getUserInfo($userid)
     {
         try {
-            $sql = "SELECT *
-            FROM bucxai_users
-            INNER JOIN bucxai_profiles ON bucxai_users.user_id = bucxai_profiles.user_id
-            WHERE bucxai_users.user_id = :userid;";
+            // $sql = "SELECT *
+            // FROM bucxai_users
+            // INNER JOIN bucxai_profiles ON bucxai_users.user_id = bucxai_profiles.user_id
+            // WHERE bucxai_users.user_id = :userid;";
+            $sql='SELECT * FROM users WHERE user_id=:userid';
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(":userid", $userid);
             $stmt->execute();
@@ -109,6 +115,7 @@ class User{
             if ($returned_row) {
                 return $returned_row;
             } else {
+               // return $userid;
                 return false;
             }
         } catch (PDOException $e) {
@@ -168,15 +175,19 @@ class User{
     }
 
 
-    public function getUserByUsername($username) {
-        // Retrieve user from the 'users' table by username
+    public function getUserByEmail($email) {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->bindParam(1, $username);
+            $sql = "SELECT * FROM users WHERE email = :email";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':email', $email);
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            return $result;
+            if ($result) {
+                return $result;
+            } else {
+                return false;
+            }
         } catch (PDOException $e) {
             echo "Error: " . $e->getMessage();
             return false;
