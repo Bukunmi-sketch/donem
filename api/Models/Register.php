@@ -26,7 +26,7 @@ class Register{
                 ":otp" => $otp
             ]);
 
-            if ($stmt->execute()) {
+            if ($result) {
                 return true;
             } else {
                 return false;
@@ -47,26 +47,28 @@ class Register{
 
             // if ($stmt->rowCount() > 0) {
                 $returnedRow = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($mailotp === $returnedRow['otp']){
+                if ($mailotp == $returnedRow['otp']){
                     return true;
+                }else{
+                    return false;
                 }
-            // }
+            
 
-            return false;
+            
         } catch (PDOException $e) {
             echo $e->getMessage();
             return false;
         }
     }
 
-    public function addEmail(string $email, int $userid) {
-        $role = 'user';
+    public function updateEmailVerified(string $email, int $emailVerified) {
+       
         try {
-            $sql="UPDATE users SET email = :email WHERE user_id = :userid";
+            $sql="UPDATE users SET emailVerified = :emailVerified WHERE email = :email";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 ":email" => $email,
-                ":userid" => $userid
+                ":emailVerified" => $emailVerified
             ]);
 
             if ($stmt->execute()) {
@@ -79,6 +81,7 @@ class Register{
             return false;
         }
     }
+
 
 
     public function ifEmailExist(string $email): bool
@@ -96,6 +99,8 @@ class Register{
         }
     }
 
+  
+
     public function createPassword($password,$email,$phone){
         try {
             // Hash the password
@@ -109,29 +114,6 @@ class Register{
                 ":phone" => $phone
             ]);
             return $result;
-        } catch (PDOException $e) {
-            echo $e->getMessage();
-            return false;
-        }
-    }
-
-    public function getUserInfo($userid)
-    {
-        try {
-            $sql = "SELECT *
-            FROM bucxai_users
-            INNER JOIN bucxai_profiles ON bucxai_users.user_id = bucxai_profiles.user_id
-            WHERE bucxai_users.user_id = :userid;";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(":userid", $userid);
-            $stmt->execute();
-            $returned_row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($returned_row) {
-                return $returned_row;
-            } else {
-                return false;
-            }
         } catch (PDOException $e) {
             echo $e->getMessage();
             return false;
@@ -162,43 +144,6 @@ class Register{
         return $stmtUpdate->execute();
     }
 
-
-    public function getUserByUsername($username) {
-        // Retrieve user from the 'users' table by username
-        try {
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->bindParam(1, $username);
-            $stmt->execute();
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return $result;
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-            return false;
-        }
-    }
-
-    public function changePassword(int $sessionid, string $newpassword)
-    {
-        $user_hashed_newpassword = password_hash($newpassword, PASSWORD_DEFAULT);
-
-        $query = "UPDATE bucxai_users SET password = :newpassword WHERE user_id = :sessionid";
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(":newpassword", $user_hashed_newpassword);
-
-        return $stmt->execute();
-    }
-
-    public function deleteAccount(int $userid)
-    {
-        $sqldelete = 'DELETE FROM bucxai_users WHERE user_id = :userid';
-        $stmt = $this->db->prepare($sqldelete);
-        $stmt->bindParam(":userid", $userid);
-        $stmt->execute();
-        return $stmt;
-    }
-
-    
 }
 
 

@@ -47,6 +47,61 @@ class userController
             return json_encode(['error' => 'unauthorized access']);
         }
     }
+
+    public function updateProfile($userid)
+    {
+
+        $requestBody = json_decode(file_get_contents("php://input"), true);
+        $requiredFields = ['firstname', 'lastname', 'email','phone'];
+
+        foreach ($requiredFields as $field) {
+            if (!isset($requestBody[$field])) {
+                return $this->response->sendError('error', ucfirst($field) . ' field is required');
+            }
+        }
+
+        $firstname = $this->auth->validate($requestBody['firstname']);
+        $lastname = $this->auth->validate($requestBody['lastname']);
+        $phone = $this->auth->validate($requestBody['phone']);
+        $email = $this->auth->validate($requestBody['email']);
+
+
+        
+        if (empty($firstname) || empty($lastname) || empty($phone) || empty($email)) {
+            return $this->response->sendError('error', 'all fields are required to be filled');
+        }
+        if (!$this->auth->validLetters($firstname)) {
+            return $this->response->sendError('error', 'Only valid letters are allowed for firstname');
+        }
+
+        if (!$this->auth->validLetters($lastname)) {
+            return $this->response->sendError('error', 'Only valid letters are allowed for lastname');
+        }
+      
+        if (!$this->auth->filteremail($email)) {
+            return $this->response->sendError('error', 'Invalid Email Address');
+        } else {
+            if ($this->userModel->ifEmailExist($email)) {
+                return $this->response->sendError('error', 'this email already exist');
+            } else {
+                $otp = random_int(100000, 999990);
+                $registerUser = $this->registerModel->createUser($firstname, $lastname, $phone, $address,$email,$otp);
+                if ($registerUser) {
+                    // $otpNotificationSent = $this->emailService->sendOTPNotification($email, $otp);
+                    $otpNotificationSent =true;
+                    if ($otpNotificationSent) {
+                        return $this->response->sendResponse('success', 'otp sent successfully');
+                    } else {
+                        return $this->response->sendError('error', 'an error occured while sending otp');
+                    }
+                   
+                }
+            }
+        }
+    }
+
+
+
 }
 
 

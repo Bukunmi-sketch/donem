@@ -60,6 +60,32 @@ class User{
         }
     }
 
+    public function updateProfile(string $firstname,string $lastname, string $email, int $phone, int $userid) {
+      
+        try {
+            $sql="UPDATE users SET firstname= :firstname, lastname - :lastname, email = :email, phone -:phone  WHERE user_id = :userid";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                ":firstname" => $firstname,
+                ":lastname" => $lastname,
+                ":email" => $email,
+                ":phone" => $phone,
+                ":userid" => $userid
+            ]);
+
+            $stmt->execute();
+            $affectedRows = $stmt->rowCount();
+            if ($affectedRows > 0) {
+                return true; 
+            } else {
+                return false; 
+            }
+        } catch (PDOException $e) {
+            echo "Error: " . $e->getMessage();
+            return false;
+        }
+    }
+
 
     public function ifEmailExist(string $email): bool
     {
@@ -69,7 +95,7 @@ class User{
             $stmt->bindParam(':email', $email);
             $stmt->execute();
 
-            if($stmt->rowCount() === 0){
+            if($stmt->rowCount() == 1){
                 return true;
             }else{
                 return false;
@@ -184,12 +210,35 @@ class User{
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($result) {
+                unset($result['password']);
+                unset($result['otp']);
                 return $result;
             } else {
                 return false;
             }
         } catch (PDOException $e) {
             echo "Error: " . $e->getMessage();
+            return false;
+        }
+    }
+
+    public function ifEmailVerified(string $email): bool
+    {
+        try {
+            $sql = "SELECT emailVerified FROM users WHERE email = :email";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
+
+            $returnedRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($returnedRow['emailVerified'] == 1){
+                return true;
+            }else{
+                return false;
+            }
+
+        } catch (PDOException $e) {
+            echo $e->getMessage();
             return false;
         }
     }

@@ -68,21 +68,21 @@ class authController
         if (!$this->auth->filteremail($email)) {
             return $this->response->sendError('error', 'Invalid Email Address');
         } else {
-            if (!$this->userModel->ifEmailExist($email)) {
+            if ($this->userModel->ifEmailExist($email)) {
                 return $this->response->sendError('error', 'this email already exist');
             } else {
                 $otp = random_int(100000, 999990);
                 $registerUser = $this->registerModel->createUser($firstname, $lastname, $phone, $address,$email,$otp);
-                return $this->response->sendResponse('success', 'otp sent successfully');
-                // if ($registerUser) {
-                //     $otpNotificationSent = $this->emailService->sendOTPNotification($email, $otp);
-                //     if ($otpNotificationSent) {
-                //         return $this->response->sendResponse('success', 'otp sent successfully');
-                //     } else {
-                //         return $this->response->sendError('error', 'an error occured while sending otp');
-                //     }
+                if ($registerUser) {
+                    // $otpNotificationSent = $this->emailService->sendOTPNotification($email, $otp);
+                    $otpNotificationSent =true;
+                    if ($otpNotificationSent) {
+                        return $this->response->sendResponse('success', 'otp sent successfully');
+                    } else {
+                        return $this->response->sendError('error', 'an error occured while sending otp');
+                    }
                    
-                // }
+                }
             }
         }
     }
@@ -117,6 +117,8 @@ class authController
             return $this->response->sendError('error', 'Invalid Email Address');
         } else {
             if ($this->registerModel->verifyEmail($email,$otp)) {
+                $emailVerified=1;
+                $this->registerModel->updateEmailVerified($email,$emailVerified);
                 return $this->response->sendResponse('success', 'email verified successfully');
                 //update email has verified
             } else {
@@ -167,7 +169,7 @@ class authController
     // }
 
 
-    public function createPassword($userid)
+    public function createPassword()
     {
 
         $requestBody = json_decode(file_get_contents("php://input"), true);
@@ -180,8 +182,12 @@ class authController
         }
         $password = $this->auth->validate($requestBody['password']);
         $confirmpassword = $this->auth->validate($requestBody['confirmpassword']);
-        $email = $this->auth->validate($requestBody['enail']);
+        $email = $this->auth->validate($requestBody['email']);
         $phone = $this->auth->validate($requestBody['phone']);
+
+        if (empty($email) || empty($phone)) {
+            return $this->response->sendError('error', 'no specified user for password creation');
+        }
 
         if (empty($password) && empty($confirmpassword)) {
             return $this->response->sendError('error', 'all fields must be filled');
@@ -193,9 +199,17 @@ class authController
                     return $this->response->sendError('error', 'password does not match');
                 } else {
                     if ($this->registerModel->createPassword($password,$email,$phone)) {
-                        $jwtToken = $this->auth->generateJwtToken($userid);
-                        return json_encode(['token' => $jwtToken]);
-                        return $this->response->sendResponse('success', 'password created successfully');
+                        $result = $this->userModel->getUserByEmail($email);
+                        $userid= $result['user_id']; 
+                        $firstname =$result['firstname'];
+                        $lastname =$result['lastname'];
+                        $useremail =$result['email'];
+                        $userphone =$result['phone'];
+
+
+                        $jwtToken = $this->auth->generateJwtToken($userid,$firstname,$lastname,$useremail,$userphone);
+                        return $this->response->sendResponse('success', $result, 200, $jwtToken);
+                
                     } else {
                         return $this->response->sendError('error', 'password does not match');
                     }
@@ -234,16 +248,66 @@ class authController
         if (!$this->auth->filteremail($email)) {
             return $this->response->sendError('error', 'Invalid Email Address');
         } else {
-            if (!$this->loginModel->login($email, $password)) {
-
-                //cheeck if email is verified
-                $jwtToken = $this->auth->generateJwtToken($userid);
-                return json_encode(['token' => $jwtToken]);
+            if ($this->loginModel->login($email, $password)) {
+                      if($this->userModel->ifEmailVerified($email)){
+                        $result=$this->loginModel->login($email, $password);
+                        $userid= $result['user_id']; 
+                        $firstname =$result['firstname'];
+                        $lastname =$result['lastname'];
+                        $useremail =$result['email'];
+                        $userphone =$result['phone'];
+                    
+                    //cheeck if email is verified
+                    $jwtToken = $this->auth->generateJwtToken($userid,$firstname,$lastname,$useremail,$userphone);
+                    return $this->response->sendResponse('success', $result, 200,$jwtToken);
+                      }else{
+                        return $this->response->sendError('error', "email isn't verified");
+                      }
+                  
             } else {
                 return $this->response->sendError('error', 'wrong email or password');
             }
         }
         return $this->response->sendError('error', 'Failed to add email');
+    }
+
+
+    public function forgetPassword()
+    {
+        // Receive the request body
+        $requestBody = json_decode(file_get_contents("php://input"), true);
+        $requiredFields = ['email'];
+
+        foreach ($requiredFields as $field) {
+            if (!isset($requestBody[$field])) {
+                return $this->response->sendError('error', ucfirst($field) . ' field is required');
+            }
+        }
+
+
+        $email = $this->auth->validate($requestBody['email']);
+
+        if (empty($email)) {
+            return $this->response->sendError('error', 'email address is required');
+        }
+
+        if (!$this->auth->filteremail($email)) {
+            return $this->response->sendError('error', 'Invalid Email Address');
+        } else {
+            if ($this->userModel->ifEmailExist($email)) {
+                $otp = random_int(100000, 999990);
+             //   $createOtp = $this->registerModel->createUser($firstname, $lastname, $phone, $address,$email,$otp);
+                    // $otpNotificationSent = $this->emailService->sendOTPNotification($email, $otp);
+                    $otpNotificationSent =true;
+                    if ($otpNotificationSent) {
+                        return $this->response->sendResponse('success', 'otp sent successfully');
+                    } else {
+                        return $this->response->sendError('error', 'an error occured while sending otp');
+                    }
+            } else {
+                return $this->response->sendError('error', 'this email does not exist');
+            }
+        }
     }
 
 }

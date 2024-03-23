@@ -25,13 +25,7 @@ class Login
                 if (password_verify($password, $returned_row['password'])) {
 
                     return $returned_row;
-                    // return [
-                    //     'id' => $returned_row['user_id'],
-                    //     'fullname' => $returned_row['fullname'],
-                    //     'email' => $returned_row['email'],
-                    //     'reg_date' => $returned_row['reg_date'],
-                    //     'password' => $returned_row['password']
-                    // ];
+                
                 } else {
                     return false;
                 }
