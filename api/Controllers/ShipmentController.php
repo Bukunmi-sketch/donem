@@ -109,17 +109,52 @@ class ShipmentController
     {
     }
 
-    // public function getShipmentByTrackingId($trackingId)
-    // {
-    //     // Logic for retrieving shipment by tracking ID
-    //     $shipment = $this->shipmentModel->getShipmentByTrackingId($trackingId);
+    public function searchShipment($trackingId)
+    {
+        // Logic for retrieving shipment by tracking ID
+        $shipment = $this->shipmentModel->searchShipmentByTrackingId($trackingId);
 
-    //     if ($shipment) {
-    //         return json_encode(['shipment' => $shipment]);
-    //     } else {
-    //         return json_encode(['error' => 'Shipment not found']);
-    //     }
-    // }
+        if ($shipment) {
+            return json_encode(['shipment' => $shipment]);
+        } else {
+            return json_encode(['error' => 'Shipment not found']);
+        }
+    }
+
+    public function updateShipmentLocation($userid, $shipmentid)
+    {
+        $requestBody = json_decode(file_get_contents("php://input"), true);
+        $requiredFields = ['address'];
+
+        foreach ($requiredFields as $field) {
+            if (!isset($requestBody[$field])) {
+                return $this->response->sendError('error', ucfirst($field) . ' field is required');
+            }
+        }
+
+        $address = $this->auth->validate($requestBody['address']);
+        if (empty($address)) {
+            return $this->response->sendError('error', 'address cannot be empty');
+        }
+       $shipment = $this->shipmentModel->updateCargoLocation($userid,$shipmentid,$address);
+        // $shipment=$this->shipmentModel->getGeolocationUsingCurl($address);
+
+        if ($shipment) {
+            return json_encode(['shipment' => $shipment]);
+        } else {
+            return json_encode(['error' => 'Shipment not found']);
+        }
+    }
+
+    public function getShipmentLocation($shipmentid){
+        $shipment = $this->shipmentModel->getShipmentLocation($shipmentid);
+
+        if ($shipment) {
+            return json_encode(['shipment' => $shipment]);
+        } else {
+            return json_encode(['error' => 'Shipment not found']);
+        }
+    }
 
     // private function sendShipmentNotification($userId, $trackingId)
     // {

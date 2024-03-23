@@ -16,9 +16,9 @@ use Firebase\JWT\Key;
 class Router
 {
 
-    private function handleProtectedEndpoints($endpoint) {
-        $protectedEndpoints = ['get-user', 'updateusers', 'create-shipment', 'update-profile','getusers-shipments','shipment-details','delete-shipment'];
-        // Check if the requested endpoint is protected
+    private function handleProtectedEndpoints($endpoint)
+    {
+        $protectedEndpoints = ['get-user', 'updateusers', 'create-shipment', 'update-profile', 'getusers-shipments', 'shipment-details', 'delete-shipment','update-location'];
         if (in_array($endpoint, $protectedEndpoints)) {
             // Check if JWT token is present in the request headers
             $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
@@ -33,11 +33,11 @@ class Router
                 return $decoded;
                 // $user_id = $decoded->data->userid;
                 // echo json_encode(['user' => $user_id]); 
-                // if ($decoded == "") {
-                //     http_response_code(401);
-                //     echo json_encode(['error' => 'Unauthorized: Token has expired']);
-                //     exit();
-                // }
+                if ($decoded == "") {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'Unauthorized: Token has expired']);
+                    exit();
+                }
 
             } catch (Exception $e) {
                 http_response_code(401);
@@ -96,7 +96,8 @@ class Router
         }
     }
 
-    private function handleGetRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint){
+    private function handleGetRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint)
+    {
         switch ($endpoint) {
             case 'get-user':
                 return $usercontroller->fetchUserdetails($token->data->userid); //userid
@@ -109,6 +110,13 @@ class Router
                 break;
             case 'shipment-details':
                 return $param ?  $shipcontroller->getShipmentDetails($param) : json_encode(['error' => 'Missing parameter']); //shipmentid
+                break;
+            case 'getshipment-location':
+                return $param ?  $shipcontroller->getShipmentLocation($param) : json_encode(['error' => 'Missing parameter']); //shipmentid
+                break;
+            case 'search-shipment':
+                return $param ?  $shipcontroller->searchShipment($param) : json_encode(['error' => 'Missing parameter']); //trackingid
+                break;
             default:
                 http_response_code(404);
                 return json_encode(['error' => 'Endpoint Not Found']);
@@ -116,12 +124,17 @@ class Router
     }
 
 
-    private function handlePutRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint){
+    private function handlePutRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint)
+    {
+        // if($token)
         switch ($endpoint) {
             case 'update-profile':
                 return $authcontroller->updateProfile();
                 break;
-            case '/mark-delivered': 
+            case 'update-location':
+            // return json_encode(['error' => $token]);
+            return $param ?  $shipcontroller->updateShipmentLocation($token->data->userid,$param) : json_encode(['error' => 'Missing parameter']); //shipmentid
+                break;
             default:
                 http_response_code(404);
                 return json_encode(['error' => 'Endpoint Not Found']);
@@ -129,10 +142,11 @@ class Router
     }
 
 
-    private function handleDeleteRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint){
+    private function handleDeleteRequest($authcontroller, $token, $shipcontroller, $usercontroller, $param, $endpoint)
+    {
         switch ($endpoint) {
             case 'delete-shipment':
-                 return $param ?  $shipcontroller->DeleteShipment($token->data->userid,$param) : json_encode(['error' => 'Missing parameter']);
+                return $param ?  $shipcontroller->DeleteShipment($token->data->userid, $param) : json_encode(['error' => 'Missing parameter']);
                 break;
             default:
                 http_response_code(404);
